@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NPS 2025-2 — Scores Críticos e Baixos</title>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --white: #FFFFFF;
+  --dark-blue: #4219B5;
+  --red: #FF2726;
+  --yellow: #FFC20E;
+  --green: #00AA9E;
+  --light-blue: #4CD1F6;
+  --light-gray: #F2F2F2;
+  --black: #242426;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Ubuntu', sans-serif;
+  background: var(--white);
+  color: var(--black);
+  line-height: 1.5;
+}
+
+header {
+  background: var(--dark-blue);
+  color: var(--white);
+  padding: 28px 40px;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+header h1 { font-weight: 700; font-size: 22px; }
+header span { font-weight: 300; font-size: 14px; opacity: .75; }
+
+/* Summary cards */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+  padding: 28px 40px;
+}
+.card {
+  background: var(--light-gray);
+  border-radius: 10px;
+  padding: 20px 22px;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(66,25,181,.12);
+}
+.card .label { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .4px; color: var(--dark-blue); }
+.card .value { font-size: 32px; font-weight: 700; margin-top: 4px; }
+.card.critico .value { color: var(--red); }
+.card.baixo .value { color: var(--yellow); }
+.card.total .value { color: var(--dark-blue); }
+
+/* Filters */
+.filters {
+  padding: 0 40px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.filters label { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .3px; color: var(--dark-blue); }
+.filter-group { display: flex; flex-direction: column; gap: 4px; }
+.filters select, .filters input[type="text"] {
+  font-family: 'Ubuntu', sans-serif;
+  font-size: 14px;
+  padding: 8px 12px;
+  border: 1.5px solid #d0d0d0;
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--black);
+  outline: none;
+  transition: border-color .2s ease;
+  min-width: 180px;
+}
+.filters select:focus, .filters input[type="text"]:focus {
+  border-color: var(--dark-blue);
+}
+.btn-clear {
+  font-family: 'Ubuntu', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  background: var(--light-gray);
+  color: var(--dark-blue);
+  cursor: pointer;
+  align-self: flex-end;
+  transition: background .2s ease;
+}
+.btn-clear:hover { background: #e2e2e2; }
+
+/* Table */
+.table-wrap {
+  padding: 0 40px 40px;
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+}
+thead th {
+  background: var(--dark-blue);
+  color: var(--white);
+  font-weight: 500;
+  text-align: left;
+  padding: 12px 16px;
+  position: sticky;
+  top: 0;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: background .2s ease;
+}
+thead th:hover { background: #3514a0; }
+thead th:first-child { border-radius: 8px 0 0 0; }
+thead th:last-child { border-radius: 0 8px 0 0; }
+thead th .sort-arrow { margin-left: 4px; font-size: 10px; opacity: .5; }
+thead th.sorted-asc .sort-arrow, thead th.sorted-desc .sort-arrow { opacity: 1; }
+
+tbody tr {
+  transition: background .15s ease;
+}
+tbody tr:nth-child(even) { background: var(--light-gray); }
+tbody tr:hover { background: rgba(76,209,246,.12); }
+tbody td { padding: 10px 16px; border-bottom: 1px solid #e8e8e8; }
+
+/* Cluster badges */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.badge.critico { background: rgba(255,39,38,.12); color: var(--red); }
+.badge.baixo { background: rgba(255,194,14,.15); color: #b88a00; }
+
+/* Score pill */
+.score-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 26px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 13px;
+}
+.score-pill.s1 { background: var(--red); color: var(--white); }
+.score-pill.s2 { background: rgba(255,39,38,.55); color: var(--white); }
+.score-pill.s3 { background: var(--yellow); color: var(--black); }
+
+/* Row count */
+.row-count {
+  padding: 0 40px 12px;
+  font-size: 13px;
+  color: #888;
+  font-weight: 400;
+}
+.row-count span { font-weight: 700; color: var(--dark-blue); }
+
+/* Fade-in animation for rows */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+tbody tr.visible { animation: fadeIn .25s ease forwards; }
+
+/* Responsive */
+@media (max-width: 700px) {
+  header { padding: 20px; }
+  .summary { padding: 20px; }
+  .filters { padding: 0 20px 16px; }
+  .table-wrap { padding: 0 20px 20px; }
+  .row-count { padding: 0 20px 10px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>NPS 2025-2</h1>
+  <span>Scores Críticos e Baixos por Escola</span>
+</header>
+
+<div class="summary" id="summary"></div>
+
+<div class="filters">
+  <div class="filter-group">
+    <label>Role</label>
+    <select id="fRole"><option value="">Todos</option></select>
+  </div>
+  <div class="filter-group">
+    <label>Question</label>
+    <select id="fQuestion"><option value="">Todas</option></select>
+  </div>
+  <div class="filter-group">
+    <label>Cluster</label>
+    <select id="fCluster"><option value="">Todos</option></select>
+  </div>
+  <div class="filter-group">
+    <label>CS</label>
+    <select id="fCS"><option value="">Todos</option></select>
+  </div>
+  <div class="filter-group">
+    <label>Escola</label>
+    <input type="text" id="fSearch" placeholder="Buscar...">
+  </div>
+  <button class="btn-clear" id="btnClear">Limpar filtros</button>
+</div>
+
+<div class="row-count" id="rowCount"></div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th data-col="role">Role <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="question">Pergunta <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="cluster">Cluster <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="score">Score <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="escola">Escola <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="cs">CS <span class="sort-arrow">&#9650;</span></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script>
+const DATA = [
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":1.0,"escola":"Salesiano Sagrado Coração B2C / Recife","cs":"Maike"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":2.0,"escola":"CEC Centro Educacional Cristão / Rio de Janeiro","cs":"Isadora de Freitas Ilha"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":2.0,"escola":"Mãe da Divina Providência / Primavera do Leste","cs":"Maike"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":2.0,"escola":"Pueri Mundi / São Paulo","cs":"Gustavo"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":2.0,"escola":"Santa Ângela / Resende","cs":"Maria Gomes"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Augusto Comte / Salvador","cs":"Mariana"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Conceito Bilíngue / Macapá","cs":"Marcela Tavares Ribeiro"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"ESO / Recife","cs":"Mariana"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Edukmais / Brasília","cs":"Maria Gomes"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Florescendo / Laranjeiras","cs":"Rodrigo Conde"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"INDI / Brasília","cs":"Marcela Tavares Ribeiro"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Interação Modelo / São Paulo","cs":"Ronaldo"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Magiarte / Rio de Janeiro","cs":"Rodrigo Conde"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Magsul / Ponta Porã","cs":"Maria Gomes"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Objetivo Barra / Rio de Janeiro","cs":"Rodrigo Conde"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Recriarte / Mesquita","cs":"Ronaldo"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Renascença / Goiânia","cs":"Maria Gomes"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Rubem Alves - COC / Uberaba","cs":"Ronaldo"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Sagrada Família AL / Arapiraca","cs":"Mariana"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Santa Isabel / Petrópolis","cs":"Rodrigo Conde"},
+{"role":"COORDENADOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"São Paulo / Belém","cs":"Marcela Tavares Ribeiro"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Crítico (1-2)","score":1.0,"escola":"Magiarte / Rio de Janeiro","cs":"Rodrigo Conde"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Crítico (1-2)","score":1.0,"escola":"Objetivo Barra / Rio de Janeiro","cs":"Rodrigo Conde"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Prigule / São Paulo","cs":"Gustavo"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Rubem Alves - COC / Uberaba","cs":"Ronaldo"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Salesiano Sagrado Coração B2C / Recife","cs":"Maike"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Santa Ângela / Resende","cs":"Maria Gomes"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Shunji Nishimura / Pompeia","cs":"Rodrigo Conde"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Baby Prime / São Paulo","cs":"Renato Romano"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"CEC Centro Educacional Cristão / Rio de Janeiro","cs":"Isadora de Freitas Ilha"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Comunitaria de Campinas / Campinas","cs":"Álvaro de Souza"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Connecta / Hortolândia","cs":"Gustavo"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Cooperativa Educacional de Linhares / Linhares","cs":"Giselle"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Dinamo / Alagoinhas","cs":"Marcela Tavares Ribeiro"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Florescendo / Laranjeiras","cs":"Rodrigo Conde"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Gabriel Taborin / Marau","cs":"Marcela Tavares Ribeiro"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Instituto Nossa Senhora dos Anjos / Abaetetuba","cs":"Maike"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Interativo / Caruaru","cs":"Mariana"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Interação Modelo / São Paulo","cs":"Ronaldo"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Ipes / Tangará da Serra","cs":"Rodrigo Conde"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Pueri Mundi / São Paulo","cs":"Gustavo"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Recriarte / Mesquita","cs":"Ronaldo"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Renascença / Goiânia","cs":"Maria Gomes"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Sol do Saber / Rio de Janeiro","cs":"Ronaldo"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"São Luiz / São Paulo","cs":"Álvaro de Souza"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"São Paulo / Belém","cs":"Marcela Tavares Ribeiro"},
+{"role":"COORDENADOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"São Paulo / Pró Século","cs":"Marcela Tavares Ribeiro"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":1.0,"escola":"Bruno Ostmann / Macaé","cs":"Rodrigo Conde"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":1.0,"escola":"ESO / Recife","cs":"Mariana"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":1.0,"escola":"Rosa Damasceno / Teresópolis","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":2.0,"escola":"Centro Educacional Maria Antonia / Rio de Janeiro","cs":"Ronaldo"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":2.0,"escola":"Gennius / Videira","cs":"Álvaro de Souza"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":2.0,"escola":"Girassol / Coelho Comercio e Serviços","cs":"Isadora de Freitas Ilha"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":2.0,"escola":"Interativo / Caruaru","cs":"Mariana"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":2.0,"escola":"LIP / A6 Artigos Escolares","cs":"Álvaro de Souza"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":2.0,"escola":"Prigule / São Paulo","cs":"Gustavo"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Crítico (1-2)","score":2.0,"escola":"Renascer / Parnamirim","cs":"Ronaldo"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"ACM / Porto Alegre","cs":"Gustavo"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Centro Educacional São Francisco / Valença do Piauí","cs":"Ronaldo"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Centro de Ensino Clube do Pimpolho / Pimpolho","cs":"Ronaldo"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Conceito Bilíngue / Macapá","cs":"Marcela Tavares Ribeiro"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Corujinha / Campo Grande","cs":"Rodrigo Conde"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Dinamico / Vitoria da Conquista","cs":"Mariana"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Evolução / Porto Seguro","cs":"Marcela Tavares Ribeiro"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Florescendo / Laranjeiras","cs":"Rodrigo Conde"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Girassol Recreação e Educação Infantil / Hortolândia","cs":"Giselle"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Maanaim / Riacho Fundo","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Montessori Santo Agostinho / Ipiaú","cs":"Mariana"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"New Garden / Rio de Janeiro","cs":"Giselle"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Objetivo Caraguá / Caraguatatuba","cs":"Álvaro de Souza"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Participação / Fazenda Rio Grande","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"SER / I","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Sagrada Família / Brasília - Grade","cs":"Marcela Tavares Ribeiro"},
+{"role":"DIRETOR","question":"Avaliação Contínua","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Santa Ângela / Resende","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":1.0,"escola":"Doce Geração / Cotia","cs":"Gustavo"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":1.0,"escola":"Lion Centro Educacional / Alta Floresta","cs":"Álvaro de Souza"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":1.0,"escola":"Rosa Damasceno / Teresópolis","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Aprovado / Macaé","cs":"Rodrigo Conde"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Ayllton Santos / Recife","cs":"Mariana"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"CEPER / Nova Iguaçu","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Caminho do Saber / Santa Cruz do Sul","cs":"Ronaldo"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Gennius / Videira","cs":"Álvaro de Souza"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Girassol / Coelho Comercio e Serviços","cs":"Isadora de Freitas Ilha"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Interativo / Caruaru","cs":"Mariana"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Iolanda Petry / Sonora","cs":"Ronaldo"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Pantheon / Salvador","cs":"Marcela Tavares Ribeiro"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Prigule / São Paulo","cs":"Gustavo"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Renascer / Parnamirim","cs":"Ronaldo"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Aliançados / Campo Grande","cs":"Marcela Tavares Ribeiro"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Aprovado Rio das Ostras / Contraturno","cs":"Rodrigo Conde"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Artur Ferreira / Santa Isabel","cs":"Gustavo"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Batista Independente / Ribeirão Preto","cs":"Gustavo"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Brincando e Aprendendo / Balsas","cs":"Nathan Oliveira dos Santos"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Bruno Ostmann / Macaé","cs":"Rodrigo Conde"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Centro Educacional Dinâmico / São Joaquim","cs":"Gustavo"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Centro Educacional Moraes Ferreira / Rio de Janeiro","cs":"Giselle"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Centro de Ensino Clube do Pimpolho / Pimpolho","cs":"Ronaldo"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Corujinha / Campo Grande","cs":"Rodrigo Conde"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Dinamico / Vitoria da Conquista","cs":"Mariana"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Educandário Batista de Muriaé / Muriaé","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Escola Evangélica Presbiteriana de Porangatu / Porangatu","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Girassol Recreação e Educação Infantil / Hortolândia","cs":"Giselle"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Impacto / Ilhéus","cs":"Mariana"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Instituto Adonai / Santa Cruz da Serra","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"LIP / A6 Artigos Escolares","cs":"Álvaro de Souza"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Lago dos Cisnes / São Mateus","cs":"Isadora de Freitas Ilha"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Maanaim / Riacho Fundo","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Meu Aconchego / Paulista","cs":"Mariana"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Montessori Santo Agostinho / Ipiaú","cs":"Mariana"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Objetivo Caraguá / Caraguatatuba","cs":"Álvaro de Souza"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Parque / Barra 3x","cs":"Rodrigo Conde"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Renascença / Brasilia","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Risque e Rabisque / Belo Horizonte","cs":"Ronaldo"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"SER - Sociedade Educacional Recreio / Vila Valqueire","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Sagrada Família / Brasília - Grade","cs":"Marcela Tavares Ribeiro"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Santa Ângela / Resende","cs":"Maria Gomes"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Servita Nossa Senhora Rainha dos Corações / Rio de Janeiro","cs":"Giselle"},
+{"role":"DIRETOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Tia Avyla / Aquiraz","cs":"Giselle"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Crítico (1-2)","score":1.0,"escola":"Domínio / Belo Horizonte","cs":"Ronaldo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Arte e Manha / Rio de Janeiro","cs":"Maria Gomes"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Artur Ferreira / Santa Isabel","cs":"Gustavo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Connecta / Hortolândia","cs":"Gustavo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Dunas / Rio de Janeiro","cs":"Giselle"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Girassol / Coelho Comercio e Serviços","cs":"Isadora de Freitas Ilha"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Impacto / Ilhéus","cs":"Mariana"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Preve / Rio Preto","cs":"Maike"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Rubem Alves - COC / Uberaba","cs":"Ronaldo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Salesiano Dom Bosco MS / Três Lagoas","cs":"Rodrigo Conde"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Crítico (1-2)","score":2.0,"escola":"Sol do Saber / Rio de Janeiro","cs":"Ronaldo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"23 de Abril / VJR Papelaria","cs":"Giselle"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Agnus Dei / Terras do Sonhar","cs":"Gustavo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Americana / Americana","cs":"Renato Romano"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Baby Prime / São Paulo","cs":"Renato Romano"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Catamarã / São Paulo","cs":"Álvaro de Souza"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Centro Educacional Dinâmico / São Joaquim","cs":"Gustavo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Centro Educacional Galileu / São Bernardo do Campo","cs":"Ronaldo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Centro Educacional Moraes Ferreira / Rio de Janeiro","cs":"Giselle"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Colégio Brasileiro / São Paulo","cs":"Giselle"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Comunitaria de Campinas / Campinas","cs":"Álvaro de Souza"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Conceito Criativo / Cascavel","cs":"Isadora de Freitas Ilha"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Corujinha / Campo Grande","cs":"Rodrigo Conde"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Cristão Kairós / Barueri","cs":"Álvaro de Souza"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Dindinha / Rio de Janeiro","cs":"Ronaldo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"EDIM / Book Fair","cs":"Renato Romano"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"ESO / Recife","cs":"Mariana"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Educandário Antonio Burgos / Santa Cruz do Capibaribe","cs":"Mariana"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Espaço Mágico / Vila Velha","cs":"Ronaldo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Florescendo / Laranjeiras","cs":"Rodrigo Conde"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Ipes / Sapezal","cs":"Rodrigo Conde"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Isaac Newton / Artur Alvin","cs":"Gustavo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Jardim Escola Pimentinha / Macae","cs":"Ronaldo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Lion Centro Educacional / Alta Floresta","cs":"Álvaro de Souza"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Magiarte / Rio de Janeiro","cs":"Rodrigo Conde"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Meu Aconchego / Paulista","cs":"Mariana"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Pedro Apóstolo / Curitiba","cs":"Ronaldo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Praia de Coqueiral / Coqueiral","cs":"Rodrigo Conde"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Primeiro Passo / Mandaguari","cs":"Gustavo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Renascer / Parnamirim","cs":"Ronaldo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Rodin / Indaiatuba","cs":"Gustavo"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"SER - Sociedade Educacional Recreio / Vila Valqueire","cs":"Maria Gomes"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Santa Isabel / Petrópolis","cs":"Rodrigo Conde"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"Santos Anjos / Porto União","cs":"Álvaro de Souza"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"ZeroHum / Belford Roxo","cs":"Maike"},
+{"role":"PROFESSOR","question":"Edify Play","cluster":"Baixo (2.01-3)","score":3.0,"escola":"ZeroHum / Centro RJ","cs":"Maike"}
+];
+
+// Unique values for filters
+const unique = (arr, key) => [...new Set(arr.map(d => d[key]))].sort();
+const selRole = document.getElementById('fRole');
+const selQuestion = document.getElementById('fQuestion');
+const selCluster = document.getElementById('fCluster');
+const selCS = document.getElementById('fCS');
+const inputSearch = document.getElementById('fSearch');
+const tbody = document.getElementById('tbody');
+
+unique(DATA, 'role').forEach(v => selRole.add(new Option(v, v)));
+unique(DATA, 'question').forEach(v => selQuestion.add(new Option(v, v)));
+unique(DATA, 'cluster').forEach(v => selCluster.add(new Option(v, v)));
+unique(DATA, 'cs').forEach(v => selCS.add(new Option(v, v)));
+
+let sortCol = 'score';
+let sortAsc = true;
+
+function clusterClass(c) { return c.startsWith('Crítico') ? 'critico' : 'baixo'; }
+function scoreClass(s) { return s <= 1 ? 's1' : s <= 2 ? 's2' : 's3'; }
+
+function filtered() {
+  const r = selRole.value, q = selQuestion.value, cl = selCluster.value, cs = selCS.value;
+  const s = inputSearch.value.toLowerCase();
+  return DATA.filter(d =>
+    (!r || d.role === r) &&
+    (!q || d.question === q) &&
+    (!cl || d.cluster === cl) &&
+    (!cs || d.cs === cs) &&
+    (!s || d.escola.toLowerCase().includes(s))
+  );
+}
+
+function render() {
+  const rows = filtered();
+  rows.sort((a, b) => {
+    let va = a[sortCol], vb = b[sortCol];
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+    if (va < vb) return sortAsc ? -1 : 1;
+    if (va > vb) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  tbody.innerHTML = rows.map((d, i) => `
+    <tr class="visible" style="animation-delay:${Math.min(i * 15, 400)}ms">
+      <td>${d.role}</td>
+      <td>${d.question}</td>
+      <td><span class="badge ${clusterClass(d.cluster)}">${d.cluster}</span></td>
+      <td><span class="score-pill ${scoreClass(d.score)}">${d.score.toFixed(1)}</span></td>
+      <td>${d.escola}</td>
+      <td>${d.cs}</td>
+    </tr>
+  `).join('');
+
+  // Summary cards
+  const critico = rows.filter(d => d.cluster.startsWith('Crítico')).length;
+  const baixo = rows.filter(d => d.cluster.startsWith('Baixo')).length;
+  const schools = new Set(rows.map(d => d.escola)).size;
+  const csCount = new Set(rows.map(d => d.cs)).size;
+
+  document.getElementById('summary').innerHTML = `
+    <div class="card critico"><div class="label">Crítico (1-2)</div><div class="value">${critico}</div></div>
+    <div class="card baixo"><div class="label">Baixo (2.01-3)</div><div class="value">${baixo}</div></div>
+    <div class="card total"><div class="label">Total registros</div><div class="value">${rows.length}</div></div>
+    <div class="card total"><div class="label">Escolas</div><div class="value">${schools}</div></div>
+    <div class="card total"><div class="label">CS reps</div><div class="value">${csCount}</div></div>
+  `;
+
+  document.getElementById('rowCount').innerHTML = `Exibindo <span>${rows.length}</span> de <span>${DATA.length}</span> registros`;
+
+  // Update header sort indicators
+  document.querySelectorAll('thead th').forEach(th => {
+    th.classList.remove('sorted-asc', 'sorted-desc');
+    const arrow = th.querySelector('.sort-arrow');
+    if (th.dataset.col === sortCol) {
+      th.classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
+      arrow.innerHTML = sortAsc ? '&#9650;' : '&#9660;';
+    } else {
+      arrow.innerHTML = '&#9650;';
+    }
+  });
+}
+
+// Sort on header click
+document.querySelectorAll('thead th').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (sortCol === col) { sortAsc = !sortAsc; }
+    else { sortCol = col; sortAsc = true; }
+    render();
+  });
+});
+
+// Filter events
+[selRole, selQuestion, selCluster, selCS].forEach(el => el.addEventListener('change', render));
+inputSearch.addEventListener('input', render);
+document.getElementById('btnClear').addEventListener('click', () => {
+  selRole.value = ''; selQuestion.value = ''; selCluster.value = ''; selCS.value = ''; inputSearch.value = '';
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
